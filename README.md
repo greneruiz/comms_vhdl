@@ -1,13 +1,5 @@
---===================================================================
--- File Name: README.md
--- Type     : 
--- Purpose  : GitHub Repository - comms_vhdl
--- Version  : 1.0
---===================================================================
--- Revision History
--- Version/Date : V1.0 / 2024-DEC-05 / GREN
---		* Initial release
---    * Uploaded I2C-master and SPI-slave designs, along with
---    Go-No-Go test benches. These designs are for further testing
---    and are not finalized.
---===================================================================
+ Version/Date : V1.0 / 2024-DEC-05 / GREN
+	* Initial release
+    * Uploaded I2C-master and SPI-slave designs, along with
+    Go-No-Go test benches. These designs are for further testing
+    and are not finalized.
