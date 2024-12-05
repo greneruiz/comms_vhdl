@@ -34,12 +34,12 @@ architecture RTL_TB_SPI_SLAVE of tb_spi_slave_phy is
 
 	signal i_reset_n			: std_logic := '0';														-- FSM Reset, logic-low
 	signal i_sysclk				: std_logic;															-- System clock; minimum 2x of SCK
-	signal i_wr_data			: std_logic_vector( DATA_LENGTH - 1 downto 0 ) := ( others => '0' );	-- Data to be send to the master
-	signal o_wr_byte_done		: std_logic;															-- Request new message to send to master; Pulses at SYSCLK frequency
-	signal o_rd_data1			: std_logic_vector( INIT_DATA_LENGTH - 1 downto 0 );	
-	signal o_rd_valid1			: std_logic;
-	signal o_rd_datax			: std_logic_vector( DATA_LENGTH - 1 downto 0 );	
-	signal o_rd_validx			: std_logic;
+	signal i_miso_data			: std_logic_vector( DATA_LENGTH - 1 downto 0 ) := ( others => '0' );	-- Data to be send to the master
+	signal o_miso_done			: std_logic;															-- Request new message to send to master; Pulses at SYSCLK frequency
+	signal o_mosi_data1			: std_logic_vector( INIT_DATA_LENGTH - 1 downto 0 );	
+	signal o_mosi_valid1		: std_logic;
+	signal o_mosi_datax			: std_logic_vector( DATA_LENGTH - 1 downto 0 );	
+	signal o_mosi_validx		: std_logic;
 	signal o_spi_busyn			: std_logic;
 	signal i_phy_sck			: std_logic := '0';
 	signal i_phy_csn			: std_logic := '1';
@@ -67,12 +67,12 @@ port map
 (
 	i_reset_n			=> i_reset_n			,							-- FSM Reset, logic-low
 	i_sysclk			=> i_sysclk				,							-- System clock; minimum 2x of SCK
-	i_wr_data			=> i_wr_data			,							-- Data to be send to the master
-	o_wr_byte_done		=> o_wr_byte_done		,							-- Request new message to send to master; Pulses at SYSCLK frequency
-	o_rd_data1			=> o_rd_data1			,
-	o_rd_valid1			=> o_rd_valid1			,
-	o_rd_datax			=> o_rd_datax			,
-	o_rd_validx			=> o_rd_validx			,
+	i_miso_data			=> i_miso_data			,							-- Data to be send to the master
+	o_miso_done			=> o_miso_done			,							-- Request new message to send to master; Pulses at SYSCLK frequency
+	o_mosi_data1		=> o_mosi_data1			,
+	o_mosi_valid1		=> o_mosi_valid1		,
+	o_mosi_datax		=> o_mosi_datax			,
+	o_mosi_validx		=> o_mosi_validx		,
 	o_spi_busyn			=> o_spi_busyn			,
 	i_phy_sck			=> i_phy_sck			,
 	i_phy_csn			=> i_phy_csn			,
@@ -82,7 +82,7 @@ port map
 
 
 
-i_wr_data	<= slave_data( 7 downto 0 );
+i_miso_data	<= slave_data( 7 downto 0 );
 
 sim_sysclk: process begin
 	i_sysclk	<= '0';
@@ -122,12 +122,12 @@ end process;
 
 
 sim_rd_stim: process begin
-	wait until o_rd_valid1 = '1';									-- First SPI_WRITE(INIT_DATA_LENGTH) -> spi write mode
-	wait until o_rd_valid1 = '1';									-- Second SPI_WRITE(INIT_DATA_LENGTH) -> spi read mode
+	wait until o_mosi_valid1 = '1';									-- First SPI_WRITE(INIT_DATA_LENGTH) -> spi write mode
+	wait until o_mosi_valid1 = '1';									-- Second SPI_WRITE(INIT_DATA_LENGTH) -> spi read mode
 	slave_data( 7 downto 0 )	<= x"C8";
-	wait until o_wr_byte_done = '1';
+	wait until o_miso_done = '1';
 	slave_data( 7 downto 0 )	<= x"D7";	
-	wait until o_wr_byte_done = '1';
+	wait until o_miso_done = '1';
 	slave_data( 7 downto 0 )	<= x"E6";	
 
 end process;

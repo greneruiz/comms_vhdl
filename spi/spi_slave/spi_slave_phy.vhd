@@ -43,12 +43,12 @@ port
 (
 	i_reset_n			: in	std_logic;										-- FSM Reset, logic-low
 	i_sysclk			: in	std_logic;										-- System clock; minimum 2x of SCK
-	i_wr_data			: in	std_logic_vector( DATA_LENGTH - 1 downto 0 );	-- Data to be send to the master
-	o_wr_byte_done		: out	std_logic;										-- Request new message to send to master; Pulses at SYSCLK frequency
-	o_rd_data1			: out	std_logic_vector( INIT_DATA_LENGTH - 1 downto 0 );	
-	o_rd_valid1			: out	std_logic;
-	o_rd_datax			: out	std_logic_vector( DATA_LENGTH - 1 downto 0 );	
-	o_rd_validx			: out	std_logic;
+	i_miso_data			: in	std_logic_vector( DATA_LENGTH - 1 downto 0 );	-- Data to be sent to the master
+	o_miso_done			: out	std_logic;										-- Request new message to send to master; Pulses at SYSCLK frequency
+	o_mosi_data1		: out	std_logic_vector( INIT_DATA_LENGTH - 1 downto 0 );	
+	o_mosi_valid1		: out	std_logic;
+	o_mosi_datax		: out	std_logic_vector( DATA_LENGTH - 1 downto 0 );	
+	o_mosi_validx		: out	std_logic;
 	o_spi_busyn			: out	std_logic;
 	i_phy_sck			: in	std_logic;
 	i_phy_csn			: in	std_logic;
@@ -99,11 +99,11 @@ begin
 --===================================================================
 
 	
-	o_wr_byte_done		<= s_byte_done;
-	o_rd_data1			<= s_data1;
-	o_rd_valid1			<= s_valid1;
-	o_rd_datax			<= s_datax;
-	o_rd_validx			<= s_validx;
+	o_miso_done			<= s_byte_done;
+	o_mosi_data1		<= s_data1;
+	o_mosi_valid1		<= s_valid1;
+	o_mosi_datax		<= s_datax;
+	o_mosi_validx		<= s_validx;
 	o_spi_busyn			<= s_busyn;
 	o_phy_sdo			<= s_sdo;
 	
@@ -174,7 +174,7 @@ process
 	s_sck			,
 	s_csn			,
 	s_sdi			,
-	i_wr_data
+	i_miso_data
 )
 is
 	variable CPHA_COND_WR		: std_logic_vector( 1 downto 0 ) := "00";
@@ -290,17 +290,8 @@ begin
 
 ---------------------------------------------------------------------------------- SLAVE TRANSMIT STATES
 	case s_state is
---		when STATE_PROCESS_1ST_MESSAGE =>										-- Latch I_WR_DATA
---			if s_sck = CPHA_COND_WR and s_csn = "00" then
---				if ( ENDIAN = "MSB" and s_bit_ctr = 0 ) or
---				( ENDIAN = "LSB" and s_bit_ctr = INIT_DATA_LENGTH - 1 )  then
---					n_byte_wr	<= i_wr_data;
---				end if;	
---			end if;
-
-
 		when STATE_PROCESS_NTH_MESSAGE =>
-			n_byte_wr		<= i_wr_data;
+			n_byte_wr		<= i_miso_data;
 			n_byte_done		<= '0';
 			
 			if s_sck = CPHA_COND_RD and s_csn = "00" then						-- If SCK transitions to data phase
@@ -312,7 +303,7 @@ begin
 					end if;
 
 					if s_bit_ctr = DATA_LENGTH - 1 then
-						n_byte_wr	<= i_wr_data;
+						n_byte_wr	<= i_miso_data;
 					end if;
 				else															-- Bit order = LSb first
 					if s_bit_ctr = DATA_LENGTH - 1 then
@@ -320,7 +311,7 @@ begin
 					end if;
 
 					if s_bit_ctr = 0 then
-						n_byte_wr	<= i_wr_data;
+						n_byte_wr	<= i_miso_data;
 					end if;
 				end if;
 			end if;
