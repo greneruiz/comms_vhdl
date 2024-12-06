@@ -5,7 +5,7 @@
 -- Version  : 1.0
 -- =================================================================
 -- Revision History
--- Version/Date : V1.0 / 2024-Dec-04 / GREN
+-- Version/Date : V1.0 / 2024-Dec-04 / G.RUIZ
 --		* Initial release
 --		* Not a comprehensive test, for initial go-no-go only !!
 -- =================================================================

@@ -5,7 +5,7 @@
 -- Version  : 1.0
 --===================================================================
 -- Revision History
--- Version/Date : V1.0 / 2024-DEC-03 / GREN
+-- Version/Date : V1.0 / 2024-DEC-03 / G.RUIZ
 --		* Initial release
 --		* Resource utilization: 39 registers, 36 LUTs (Xilinx Virtex 6)
 --===================================================================
