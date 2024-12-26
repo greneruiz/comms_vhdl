@@ -2,12 +2,17 @@
 -- File Name: spi_slave_phy.vhd
 -- Type     : FSM
 -- Purpose  : SPI-Slave controller
--- Version  : 1.0
+-- Version  : 1.2
 --===================================================================
 -- Revision History
 -- Version/Date : V1.0 / 2024-DEC-03 / G.RUIZ
 --		* Initial release
 --		* Resource utilization: 39 registers, 36 LUTs (Xilinx Virtex 6)
+-- Version/Date : v1.1 / 2024-DEC-23 / G.RUIZ
+--		* Converted I_PHY_CSN to positive logic
+-- Version/Date : V1.2 / 2024-DEC-25 / G.RUIZ
+--		* Base clock minimum requirement now at least SCK * 4
+--		* Fixed bug where the read-byte shift-out is late by 1 SCK
 --===================================================================
 --	Functional Description:
 --	I.	Supports having a different bit size for the first
@@ -51,7 +56,7 @@ port
 	o_mosi_validx		: out	std_logic;
 	o_spi_busyn			: out	std_logic;
 	i_phy_sck			: in	std_logic;
-	i_phy_csn			: in	std_logic;
+	i_phy_cs			: in	std_logic;
 	i_phy_sdi			: in	std_logic;
 	o_phy_sdo			: out	std_logic
 );
@@ -88,7 +93,7 @@ architecture RTL_SPI_SLAVE of spi_slave_phy is
 	
 
 	signal s_sck	: std_logic_vector( 1 downto 0 );
-	signal s_csn	: std_logic_vector( 1 downto 0 );
+	signal s_cs		: std_logic_vector( 1 downto 0 );
 	signal s_sdi	: std_logic_vector( 1 downto 0 );
 	
 	
@@ -109,6 +114,12 @@ begin
 	
 	
 
+	-- s_sck(0)		<= i_phy_sck when SPI_CPOL = '0' else ( not i_phy_sck );
+	-- s_cs(0)			<= i_phy_cs;
+	-- s_sdi(0)		<= i_phy_sdi;
+
+
+
 process( i_sysclk )
 begin
 	if rising_edge( i_sysclk ) then
@@ -117,16 +128,15 @@ begin
 		else
 			s_sck(0)	<= not i_phy_sck;
 		end if;
-		s_csn(0)		<= i_phy_csn;
+		s_cs(0)			<= i_phy_cs;
 		s_sdi(0)		<= i_phy_sdi;
-
+	
 		s_sck(1)		<= s_sck(0);
-		s_csn(1)		<= s_csn(0);
+		s_cs(1)			<= s_cs(0);
 		s_sdi(1)		<= s_sdi(0);
 	end if;
 end process;
 
-	
 
 
 process( i_sysclk, i_reset_n )
@@ -172,7 +182,7 @@ process
 	s_byte_done		,
 	s_sdo			,
 	s_sck			,
-	s_csn			,
+	s_cs			,
 	s_sdi			,
 	i_miso_data
 )
@@ -204,7 +214,7 @@ begin
 ---------------------------------------------------------------------------------- SLAVE RECEIVE STATES
 	case s_state is
 		when STATE_IDLE =>
-			if s_csn = "10" then												-- Slave becomes active on CSN falling edge, regardless of SCK idle level
+			if s_cs = "01" then												-- Slave becomes active on CS rising edge, regardless of SCK idle level
 				n_busyn			<= '0';
 				if ENDIAN = "MSB" then											-- Check bit ordering; assign bit pointer's initial index
 					n_bit_ctr	<= INIT_DATA_LENGTH - 1;					
@@ -222,7 +232,7 @@ begin
 		when STATE_PROCESS_1ST_MESSAGE =>
 			n_valid1		<= '0';
 			
-			if s_sck = CPHA_COND_WR and s_csn = "00" then						-- If SCK transitions to data phase
+			if s_sck = CPHA_COND_WR and s_cs = "11" then						-- If SCK transitions to data phase
 				n_data1( s_bit_ctr )	<= s_sdi(0);
 				
 				if ENDIAN = "MSB" then											-- Bit order = MSB first
@@ -254,7 +264,7 @@ begin
 			n_valid1			<= '0';
 			n_validx			<= '0';
 			
-			if s_sck = CPHA_COND_WR and s_csn = "00" then						-- If SCK transitions to data phase
+			if s_sck = CPHA_COND_WR and s_cs = "11" then						-- If SCK transitions to data phase
 				n_datax( s_bit_ctr )	<= s_sdi(0);
 				
 				if ENDIAN = "MSB" then											-- Bit order = MSB first
@@ -274,7 +284,7 @@ begin
 				end if;
 			end if;
 
-			if s_csn = "01" then												-- If CSN deasserts, stop transacting
+			if s_cs = "10" then												-- If CSN deasserts, stop transacting
 				n_state			<= STATE_STOP;
 			else
 				n_state			<= STATE_PROCESS_NTH_MESSAGE;
@@ -294,7 +304,11 @@ begin
 			n_byte_wr		<= i_miso_data;
 			n_byte_done		<= '0';
 			
-			if s_sck = CPHA_COND_RD and s_csn = "00" then						-- If SCK transitions to data phase
+			if s_bit_ctr = DATA_LENGTH - 1 then
+				n_sdo		<= s_byte_wr( s_bit_ctr );						-- We latch the first bit of the read-byte before the next SCK
+			end if;
+			
+			if s_sck = CPHA_COND_RD and s_cs = "11" then						-- If SCK transitions to data phase
 				n_sdo		<= s_byte_wr( s_bit_ctr );
 				
 				if ENDIAN = "MSB" then											-- Bit order = MSB first
