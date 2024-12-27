@@ -38,7 +38,8 @@ architecture RTL_TB_I2C_PHY of tb_i2c_master_phy is
 	signal i_wr_data			: std_logic_vector( 7 downto 0 ) := ( others => '0' );		-- Byte to be written to slave
 	signal o_rd_data			: std_logic_vector( 7 downto 0 );							-- Byte read from slave
 	signal o_rd_valid			: std_logic;												-- Byte read valid
-	signal o_byte_ack			: std_logic;												-- Byte-ack pulse in I_SYSCLK to acknowledge the previous byte from the interface layer
+	signal o_byte_wr_done		: std_logic;
+	signal o_byte_ack			: std_logic;												
 	signal i_frame_ena			: std_logic := '0';											-- Transaction frame; keep high to write/read multiple bytes
 	signal o_ack_error			: std_logic;												-- I2C Ack; 1 = slave did not acknowledge the byte
 	signal o_fsm_busyn			: std_logic;												-- FSM Status; 1 = idle; 0 = transacting
@@ -66,7 +67,8 @@ port map
 	i_rd_wrn			=> i_rd_wrn				,		
 	i_wr_data			=> i_wr_data			,		
 	o_rd_data			=> o_rd_data			,		
-	o_rd_valid			=> o_rd_valid			,		
+	o_rd_valid			=> o_rd_valid			,	
+	o_byte_wr_done		=> o_byte_wr_done		,
 	o_byte_ack			=> o_byte_ack			,		
 	i_frame_ena			=> i_frame_ena			,		
 	o_ack_error			=> o_ack_error			,		
